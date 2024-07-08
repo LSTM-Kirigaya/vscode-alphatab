@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlphaTab</title>
+    <script src="./alphaTab.min.js"></script>
+</head>
+<body>
+<div id="alphaTab">
+</div>
+<script>
+const element = document.getElementById('alphaTab');
+
+console.error = function() {
+    console.log(...arguments);
+    element.innerHTML = `<div class="error-container"><div class="error-block">Alpha Tex Syntax Error</div></div>`
+}
+
+function simpleRender(alphatex) {
+    element.innerHTML = alphatex;
+
+    const api = new alphaTab.AlphaTabApi(element, {
+        tex: true
+    });
+}
+
+let debounceRenderHandler = undefined;
+function debounceRender(alphatex) {
+    if (debounceRenderHandler !== undefined) {
+        clearTimeout(debounceRenderHandler);
+    }
+    debounceRenderHandler = setTimeout(() => {        
+        simpleRender(alphatex)
+    }, 200);
+}
+
+window.addEventListener('message', event => {
+    const message = event.data;
+    const alphatex = message.alphatex.trim();
+    if (alphatex) {
+        simpleRender(alphatex);
+    }
+});
+
+simpleRender(`\\title "Gymnopédie No.1"
+.
+
+\\ts 3 4
+
+0.5 (2.1 5.2 6.3) |
+0.6 (4.1 4.2 4.3) |
+0.5 (4.1 5.2 6.3) |
+0.6 (4.1 4.2 4.3) |
+0.5 (4.1 5.2 6.3) 7.1 |
+(5.1 0.6) (4.1 4.2 4.3) 4.2 |
+(2.1 0.5) (4.2 6.3) 5.2 |
+(0.2 0.6) (1.3 1.4 2.5) |
+(16.1 0.5) (5.2 6.3) |
+(0.6) (4.1 4.2 4.3) |
+0.5 (4.1 5.2 6.3) |
+0.6 (4.1 4.2 4.3) |
+0.5 (4.1 5.2 6.3) 7.1 |
+5.1 (4.1 4.2 4.3) 4.2 |
+(2.2 0.5) (4.2 6.3) 5.2 |
+(0.2 0.6) (1.3 1.4 2.5) |
+(16.2 4.6) (4.3 6.4 6.5) |
+(2.1 2.6) (2.2 2.3 4.4) |
+2.6 (5.2 2.3 4.4) |
+0.6 (0.2 0.3 2.4) |`);
+
+</script>
+</body>
+</html>
+
+<style>
+.at-surface * {
+    fill: var(--vscode-foreground);
+    stroke: var(--vscode-foreground);
+}
+
+.error-block {
+    border-radius: .5em;
+    background-color: rgba(200, 30, 10, 0.2);
+    color: rgba(200, 30, 10, 1);
+    border: 1px solid rgba(200, 30, 10, 1);
+    padding: 10px;
+    font-size: 1.1rem;
+    width: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.error-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    top: 45vh;
+    position: absolute;
+}
+
+</style>

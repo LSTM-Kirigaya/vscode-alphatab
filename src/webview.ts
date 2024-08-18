@@ -17,8 +17,17 @@ function getWebviewContent(extensionPath: string, panel?: vscode.WebviewPanel): 
     return html;
 }
 
+function getSoundFileUri(context: vscode.ExtensionContext, soundFile: string, panel?: vscode.WebviewPanel) {
+    const soundFilePath = fspath.join(context.extensionPath, 'webview', 'sound', soundFile);
+    return panel?.webview.asWebviewUri(vscode.Uri.file(soundFilePath)).toString();
+}
 
-export function openAlphatabPreview(context: vscode.ExtensionContext) {    
+function getSoundDirUri(context: vscode.ExtensionContext, panel?: vscode.WebviewPanel) {
+    const soundFilePath = fspath.join(context.extensionPath, 'webview', 'sound');
+    return panel?.webview.asWebviewUri(vscode.Uri.file(soundFilePath)).toString();
+}
+
+export function openAlphatabPreview(context: vscode.ExtensionContext, uri?: vscode.Uri) {    
     const panel = vscode.window.createWebviewPanel(
         'alphatab',
         'Alphatab',
@@ -37,13 +46,30 @@ export function openAlphatabPreview(context: vscode.ExtensionContext) {
     const html = getWebviewContent(context.extensionPath, panel);
     panel.webview.html = html;
 
+    const setting = {
+        staveProfile: 'default',
+        core: {
+            tex: true
+        },
+        notation: { 
+            rhythmMode: 'showwithbars',
+        },
+        player: {
+            enablePlayer: true,
+            soundFont: ''
+        }
+    };
+    const sf2Dir = getSoundDirUri(context, panel);
+    if (uri) {
+        const alphatex = fs.readFileSync(uri.fsPath, 'utf-8');        
+        debouncePostMessage(panel, { alphatex, setting, sf2Dir });
+    }
+
     vscode.workspace.onDidChangeTextDocument(e => {
         if (e.contentChanges.length > 0) {
             const document = e.document;
-            console.log('change');
-            
-            const alphatex = document.getText();   
-            debouncePostMessage(panel, { alphatex });
+            const alphatex = document.getText();
+            debouncePostMessage(panel, { alphatex, setting, sf2Dir });
         }
     });
 }
@@ -54,7 +80,6 @@ function debouncePostMessage(panel: vscode.WebviewPanel, message: any) {
         clearTimeout(debouncePostMessageHandler);
     }
     debouncePostMessageHandler = setTimeout(() => {
-        console.log('send message');
         panel.webview.postMessage(message);
     }, 100);
 }

@@ -4,25 +4,113 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AlphaTab</title>
+    <link rel="stylesheet" href="./bulma.min.css">
     <script src="./alphaTab.min.js"></script>
 </head>
 <body>
-<div id="alphaTab">
-</div>
+    <div class="toolbar">
+        <div class="toolbar-item">
+            <button class="button is-warning is-small" onclick="play()">Play/Pause</button>
+        </div>
+        <div class="select is-warning is-small toolbar-item">
+            <select name="staveProfile" id="staveProfile" onchange="changeStaveProfile(this.value)">
+                <option value="default" class="option">default</option>
+                <option value="scoretab" class="option">scoretab</option>
+                <option value="score" class="option">score</option>
+                <option value="tab" class="option">tab</option>
+                <option value="tabmixed" class="option">tabmixed</option>
+            </select>
+        </div>
+        <div class="toolbar-item">|</div>
+        <div class="select is-warning is-small toolbar-item">
+            <select name="guitar" id="guitar" onchange="changeGuitar(this.value)">
+                <option value="sonivox">sonivox</option>
+                <option value="Acoustic Guitars JNv2.4">Acoustic Guitars JNv2.4</option>
+                <option value="Electric Guitars JNv4.4">Electric Guitars JNv4.4</option>
+            </select>
+        </div>
+    </div>
+    <br>
+    <br>
+    <div id="alphaTab">
+    </div>
 <script>
 const element = document.getElementById('alphaTab');
 
-console.error = function() {
-    console.log(...arguments);
-    element.innerHTML = `<div class="error-container"><div class="error-block">Alpha Tex Syntax Error</div></div>`
+const alphaInstance = {
+    at: undefined,
+    canPlay: true,
+    staveProfile: 'default',
+    guitar: 'sonivox',
+    alphatex: undefined,
+    setting: undefined,
+    sf2Dir: undefined
 }
 
-function simpleRender(alphatex) {
-    element.innerHTML = alphatex;
+function play() {
+    const inst = alphaInstance.at;
+    if (inst) {
+        if (alphaInstance.canPlay) {
+            inst.playPause();
+        } else {
+            // showInfoWindow('还在加载声源文件，请稍后');
+        }
+    }
+}
 
-    const api = new alphaTab.AlphaTabApi(element, {
+
+function changeStaveProfile(staveProfile) {
+    alphaInstance.staveProfile = staveProfile;
+    simpleRender(alphaInstance.alphatex, alphaInstance.setting);
+}
+
+function changeGuitar(guitar) {
+    alphaInstance.guitar = guitar;
+    simpleRender(alphaInstance.alphatex, alphaInstance.setting);
+}
+
+
+console.error = function() {
+    console.log(...arguments);
+    element.innerHTML = `<div class="error-container"><div class="error-block">Alpha Tex Syntax Error</div></div>`;
+}
+
+
+const defaultSetting = {
+    // default | scoretab | score | tab | tabmixed
+    staveProfile: 'default',
+    core: {
         tex: true
+    },
+    notation: { 
+        rhythmMode: 'showwithbars',
+    },
+    
+    player: {
+        enablePlayer: true,
+        soundFont: 'sonivox.sf2'
+    }
+};
+
+function simpleRender(alphatex, setting) {
+    element.innerHTML = alphatex;
+    alphaInstance.alphatex = alphatex;
+    alphaInstance.setting = setting;
+
+    setting = setting || defaultSetting;
+    setting.staveProfile = alphaInstance.staveProfile;
+    setting.player.soundFont = alphaInstance.sf2Dir + '/' + encodeURI(alphaInstance.guitar + '.sf2');
+    console.log(setting.player.soundFont);
+
+    alphaInstance.at = new alphaTab.AlphaTabApi(element, setting);
+
+    const p = new Promise(resolve => {
+        alphaInstance.at.soundFontLoaded.on(() => {
+            alphaInstance.canPlay = true;
+            resolve();
+        });
     });
+    return p;
 }
 
 let debounceRenderHandler = undefined;
@@ -38,42 +126,48 @@ function debounceRender(alphatex) {
 window.addEventListener('message', event => {
     const message = event.data;
     const alphatex = message.alphatex.trim();
+    const setting = message.setting;
+    alphaInstance.sf2Dir = message.sf2Dir;
     if (alphatex) {
-        simpleRender(alphatex);
+        simpleRender(alphatex, setting);
     }
 });
 
-simpleRender(`\\title "Gymnopédie No.1"
-.
+// simpleRender(`\\title "Gymnopédie No.1"
+// .
 
-\\ts 3 4
+// \\ts 3 4
 
-0.5 (2.1 5.2 6.3) |
-0.6 (4.1 4.2 4.3) |
-0.5 (4.1 5.2 6.3) |
-0.6 (4.1 4.2 4.3) |
-0.5 (4.1 5.2 6.3) 7.1 |
-(5.1 0.6) (4.1 4.2 4.3) 4.2 |
-(2.1 0.5) (4.2 6.3) 5.2 |
-(0.2 0.6) (1.3 1.4 2.5) |
-(16.1 0.5) (5.2 6.3) |
-(0.6) (4.1 4.2 4.3) |
-0.5 (4.1 5.2 6.3) |
-0.6 (4.1 4.2 4.3) |
-0.5 (4.1 5.2 6.3) 7.1 |
-5.1 (4.1 4.2 4.3) 4.2 |
-(2.2 0.5) (4.2 6.3) 5.2 |
-(0.2 0.6) (1.3 1.4 2.5) |
-(16.2 4.6) (4.3 6.4 6.5) |
-(2.1 2.6) (2.2 2.3 4.4) |
-2.6 (5.2 2.3 4.4) |
-0.6 (0.2 0.3 2.4) |`);
+// 0.5 (2.1 5.2 6.3) |
+// 0.6 (4.1 4.2 4.3) |
+// 0.5 (4.1 5.2 6.3) |
+// 0.6 (4.1 4.2 4.3) |
+// 0.5 (4.1 5.2 6.3) 7.1 |
+// (5.1 0.6) (4.1 4.2 4.3) 4.2 |
+// (2.1 0.5) (4.2 6.3) 5.2 |
+// (0.2 0.6) (1.3 1.4 2.5) |
+// (16.1 0.5) (5.2 6.3) |
+// (0.6) (4.1 4.2 4.3) |
+// 0.5 (4.1 5.2 6.3) |
+// 0.6 (4.1 4.2 4.3) |
+// 0.5 (4.1 5.2 6.3) 7.1 |
+// 5.1 (4.1 4.2 4.3) 4.2 |
+// (2.2 0.5) (4.2 6.3) 5.2 |
+// (0.2 0.6) (1.3 1.4 2.5) |
+// (16.2 4.6) (4.3 6.4 6.5) |
+// (2.1 2.6) (2.2 2.3 4.4) |
+// 2.6 (5.2 2.3 4.4) |
+// 0.6 (0.2 0.3 2.4) |`);
 
 </script>
 </body>
 </html>
 
 <style>
+:root {
+    --bulma-body-background-color: unset !important;
+}
+
 .at-surface * {
     fill: var(--vscode-foreground);
     stroke: var(--vscode-foreground);
@@ -98,6 +192,48 @@ simpleRender(`\\title "Gymnopédie No.1"
     justify-content: center;
     top: 45vh;
     position: absolute;
+}
+
+.toolbar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    z-index: 999;
+}
+
+.toolbar-item {
+    margin-right: 5px;
+}
+
+select,
+option {
+    cursor: pointer;
+}
+
+.option {
+    cursor: pointer;
+}
+
+.at-cursor-beat {
+  background: rgba(255, 183, 15, 0.6);
+}
+
+.at-selection div {
+    background: rgba(255, 183, 15, 0.1);
+}
+
+.at-cursor-bar {
+    background: rgba(255, 183, 15, 0.15);
+    border-radius: 0.3em;
+    overflow: hidden;
+}
+
+.at-highlight * {
+    fill: var(--main-color);
+    stroke: var(--main-color);
 }
 
 </style>

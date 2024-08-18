@@ -2,9 +2,17 @@
     "name": "alphatab",
     "displayName": "alphatab",
     "description": "use alpha tex to write guitar tab",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "engines": {
         "vscode": "^1.85.0"
+    },
+    "author": {
+        "name": "kirigaya"
+    },
+    "publisher": "kirigaya",
+    "icon": "image/icon.png",
+    "repository": {
+        "url": "https://github.com/LSTM-Kirigaya/vscode-alphatab"
     },
     "categories": [
         "Programming Languages",

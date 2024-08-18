@@ -8,8 +8,8 @@ function registerLSP(context: vscode.ExtensionContext) {
 }
 
 function registerWebview(context: vscode.ExtensionContext) {
-    vscode.commands.registerCommand('alphatab.preview', () => {
-        openAlphatabPreview(context)
+    vscode.commands.registerCommand('alphatab.preview', uri => {
+        openAlphatabPreview(context, uri);
     });
 }
 
